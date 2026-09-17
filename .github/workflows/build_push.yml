@@ -38,6 +38,7 @@ jobs:
           distribution: temurin
 
       - name: Write google-services.json
+        if: ${{ secrets.GOOGLE_SERVICES_JSON != '' }}
         uses: DamianReeves/write-file-action@6929a9a6d1807689191dcc8bbe62b54d70a32b42 # v1.3
         with:
           path: app/google-services.json
@@ -45,6 +46,7 @@ jobs:
           write-mode: overwrite
 
       - name: Write client_secrets.json
+        if: ${{ secrets.GOOGLE_CLIENT_SECRETS_JSON != '' }}
         uses: DamianReeves/write-file-action@6929a9a6d1807689191dcc8bbe62b54d70a32b42 # v1.3
         with:
           path: app/src/main/assets/client_secrets.json
@@ -54,11 +56,14 @@ jobs:
       - name: Set up gradle
         uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6
 
+      - name: Format code
+        run: ./gradlew spotlessApply
+
       - name: Check code format
         run: ./gradlew spotlessCheck
 
       - name: Build app
-        run: ./gradlew assemblePreview -Pinclude-telemetry -Penable-updater
+        run: ./gradlew assemblePreview -Penable-updater
 
       - name: Run unit tests
         id: unit_tests

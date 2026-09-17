@@ -21,6 +21,9 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      - name: Format code
+        run: ./gradlew spotlessApply
+
       - name: Build debug APK
         run: ./gradlew assembleStandardDebug -Pdisable-code-shrink --stacktrace
 
