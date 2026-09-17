@@ -36,6 +36,10 @@ data class LibrarySort(
         // SY -->
         data object TagList : Type(0b00100100)
         // SY <--
+        
+        // KMK -->
+        data object TotalDownloadedPages : Type(0b00101000)
+        // KMK <--
 
         companion object {
             fun valueOf(flag: Long): Type {
@@ -83,6 +87,7 @@ data class LibrarySort(
                 Type.DateAdded,
                 Type.TrackerMean,
                 /* SY -->*/ Type.TagList, /* SY <--*/
+                /* KMK -->*/ Type.TotalDownloadedPages, /* KMK <--*/
                 Type.Random,
             )
         }

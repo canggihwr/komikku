@@ -238,4 +238,9 @@
     <string name="pref_discord_show_download_button_summary">Displays a button to download the app</string>
     <string name="pref_discord_show_discord_button">Show Discord Button</string>
     <string name="pref_discord_show_discord_button_summary">Displays a button to join the Discord server</string>
+    
+    <!-- Downloaded page count feature -->
+    <string name="action_sort_page_count">Page count</string>
+    <string name="action_sort_downloaded_pages">Downloaded pages</string>
+    <string name="chapter_progress_with_total">Page %1$d/%2$d</string>
 </resources>

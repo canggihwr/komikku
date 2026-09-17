@@ -143,7 +143,10 @@ data class Manga(
         const val CHAPTER_SORTING_NUMBER = 0x00000100L
         const val CHAPTER_SORTING_UPLOAD_DATE = 0x00000200L
         const val CHAPTER_SORTING_ALPHABET = 0x00000300L
-        const val CHAPTER_SORTING_MASK = 0x00000300L
+        // KMK -->
+        const val CHAPTER_SORTING_PAGE_COUNT = 0x00000400L
+        const val CHAPTER_SORTING_MASK = 0x00000700L
+        // KMK <--
 
         const val CHAPTER_DISPLAY_NAME = 0x00000000L
         const val CHAPTER_DISPLAY_NUMBER = 0x00100000L

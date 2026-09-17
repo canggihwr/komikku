@@ -220,6 +220,33 @@ class DownloadManager(
         return cache.getDownloadCount(manga)
     }
 
+    // KMK -->
+    /**
+     * Returns the page count for a downloaded chapter.
+     *
+     * @param chapter the chapter to check.
+     * @param manga the manga of the chapter.
+     */
+    fun getPageCount(chapter: Chapter, manga: Manga): Int? {
+        return cache.getPageCount(
+            chapter.name,
+            chapter.scanlator,
+            chapter.url,
+            /* SY --> */ manga.ogTitle, /* SY <-- */
+            manga.source,
+        )
+    }
+
+    /**
+     * Returns the total page count for all downloaded chapters of a manga.
+     *
+     * @param manga the manga to check.
+     */
+    fun getTotalDownloadPageCount(manga: Manga): Int {
+        return cache.getTotalDownloadPageCount(manga)
+    }
+    // KMK <--
+
     fun cancelQueuedDownloads(downloads: List<Download>) {
         removeFromDownloadQueue(downloads.map { it.chapter })
     }

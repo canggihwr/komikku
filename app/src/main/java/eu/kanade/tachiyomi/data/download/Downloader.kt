@@ -443,7 +443,9 @@ class Downloader(
             } else {
                 tmpDir.renameTo(chapterDirname)
             }
-            cache.addChapter(chapterDirname, mangaDir, download.manga)
+            // KMK -->
+            cache.addChapter(chapterDirname, mangaDir, download.manga, download.pages?.size)
+            // KMK <--
 
             DiskUtil.createNoMediaFile(tmpDir, context)
 

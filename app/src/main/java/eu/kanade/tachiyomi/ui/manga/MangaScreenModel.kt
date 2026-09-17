@@ -1106,6 +1106,14 @@ class MangaScreenModel(
                 downloaded -> Download.State.DOWNLOADED
                 else -> Download.State.NOT_DOWNLOADED
             }
+            
+            // KMK -->
+            val pageCount = if (downloaded) {
+                downloadManager.getPageCount(chapter, manga)
+            } else {
+                null
+            }
+            // KMK <--
 
             ChapterList.Item(
                 chapter = chapter,
@@ -1116,6 +1124,9 @@ class MangaScreenModel(
                 sourceName = source?.getNameForMangaInfo(),
                 showScanlator = !isExhManga,
                 // SY <--
+                // KMK -->
+                pageCount = pageCount,
+                // KMK <--
             )
         }
     }
@@ -2091,7 +2102,18 @@ class MangaScreenModel(
                     .filter { (chapter) -> applyFilter(unreadFilter) { !chapter.read } }
                     .filter { (chapter) -> applyFilter(bookmarkedFilter) { chapter.bookmark } }
                     .filter { applyFilter(downloadedFilter) { it.isDownloaded || isLocalManga } }
-                    .sortedWith { (chapter1), (chapter2) -> getChapterSort(manga).invoke(chapter1, chapter2) }
+                    .sortedWith { item1, item2 ->
+                        // KMK -->
+                        if (manga.sorting == Manga.CHAPTER_SORTING_PAGE_COUNT) {
+                            val sortDescending = manga.sortDescending()
+                            val count1 = item1.pageCount ?: 0
+                            val count2 = item2.pageCount ?: 0
+                            if (sortDescending) count2.compareTo(count1) else count1.compareTo(count2)
+                        } else {
+                            getChapterSort(manga).invoke(item1.chapter, item2.chapter)
+                        }
+                        // KMK <--
+                    }
             }
         }
     }
@@ -2123,6 +2145,9 @@ sealed class ChapterList {
         val sourceName: String?,
         val showScanlator: Boolean,
         // SY <--
+        // KMK -->
+        val pageCount: Int? = null,
+        // KMK <--
     ) : ChapterList() {
         val id = chapter.id
         val isDownloaded = downloadState == Download.State.DOWNLOADED

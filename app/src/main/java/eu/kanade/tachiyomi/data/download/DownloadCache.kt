@@ -206,14 +206,97 @@ class DownloadCache(
         return 0
     }
 
+    // KMK -->
+    /**
+     * Returns the page count for a downloaded chapter, or null if not available.
+     *
+     * @param chapterName the name of the chapter to query.
+     * @param chapterScanlator scanlator of the chapter to query
+     * @param chapterUrl the url of the chapter to query
+     * @param mangaTitle the title of the manga to query.
+     * @param sourceId the id of the source of the chapter.
+     */
+    fun getPageCount(
+        chapterName: String,
+        chapterScanlator: String?,
+        chapterUrl: String,
+        mangaTitle: String,
+        sourceId: Long,
+    ): Int? {
+        renewCache()
+
+        val sourceDir = rootDownloadsDir.sourceDirs[sourceId] ?: return null
+        val mangaDir = sourceDir.mangaDirs[provider.getMangaDirName(mangaTitle)] ?: return null
+        
+        // Try to find the chapter directory name and get its page count
+        val chapterDirName = provider.getValidChapterDirNames(chapterName, chapterScanlator, chapterUrl)
+            .firstOrNull { it in mangaDir.chapterDirs } ?: return null
+        
+        // Return cached page count if available
+        val cachedCount = mangaDir.chapterPageCounts[chapterDirName]
+        if (cachedCount != null) return cachedCount
+        
+        // Otherwise, count pages from the filesystem
+        val source = sourceManager.getOrStub(sourceId)
+        val chapterDir = provider.findChapterDir(chapterName, chapterScanlator, chapterUrl, mangaTitle, source)
+            ?: return null
+        
+        val pageCount = when {
+            chapterDir.isFile && chapterDir.extension == "cbz" -> {
+                // Count images in CBZ archive - would need to extract or estimate
+                // For now, return null as we can't easily count without extraction
+                null
+            }
+            chapterDir.isDirectory -> {
+                // Count image files in directory
+                chapterDir.listFiles()?.count { file ->
+                    file.isFile && file.extension in listOf("jpg", "jpeg", "png", "gif", "webp", "bmp")
+                }
+            }
+            else -> null
+        }
+        
+        // Cache the result for next time
+        if (pageCount != null && pageCount > 0) {
+            scope.launchNonCancellable {
+                rootDownloadsDirMutex.withLock {
+                    val updatedMangaDir = rootDownloadsDir.sourceDirs[sourceId]
+                        ?.mangaDirs?.get(provider.getMangaDirName(mangaTitle))
+                    updatedMangaDir?.chapterPageCounts?.put(chapterDirName, pageCount)
+                }
+                updateDiskCache()
+            }
+        }
+        
+        return pageCount
+    }
+
+    /**
+     * Returns the total page count for all downloaded chapters of a manga.
+     *
+     * @param manga the manga to check.
+     */
+    fun getTotalDownloadPageCount(manga: Manga): Int {
+        renewCache()
+
+        val sourceDir = rootDownloadsDir.sourceDirs[manga.source] ?: return 0
+        val mangaDir = sourceDir.mangaDirs[
+            provider.getMangaDirName(/* SY --> */ manga.ogTitle /* SY <-- */),
+        ] ?: return 0
+
+        return mangaDir.chapterPageCounts.values.sum()
+    }
+    // KMK <--
+
     /**
      * Adds a chapter that has just been download to this cache.
      *
      * @param chapterDirName the downloaded chapter's directory name.
      * @param mangaUniFile the directory of the manga.
      * @param manga the manga of the chapter.
+     * @param pageCount the number of pages in the chapter.
      */
-    suspend fun addChapter(chapterDirName: String, mangaUniFile: UniFile, manga: Manga) {
+    suspend fun addChapter(chapterDirName: String, mangaUniFile: UniFile, manga: Manga, pageCount: Int? = null) {
         rootDownloadsDirMutex.withLock {
             // Retrieve the cached source directory or cache a new one
             var sourceDir = rootDownloadsDir.sourceDirs[manga.source]
@@ -234,6 +317,13 @@ class DownloadCache(
 
             // Save the chapter directory
             mangaDir.chapterDirs += chapterDirName
+            
+            // KMK -->
+            // Save the page count if provided
+            if (pageCount != null && pageCount > 0) {
+                mangaDir.chapterPageCounts[chapterDirName] = pageCount
+            }
+            // KMK <--
         }
 
         notifyChanges()
@@ -543,6 +633,9 @@ private class MangaDirectory(
     @Serializable(with = UniFileAsStringSerializer::class)
     val dir: UniFile?,
     var chapterDirs: MutableSet<String> = mutableSetOf(),
+    // KMK -->
+    var chapterPageCounts: MutableMap<String, Int> = mutableMapOf(),
+    // KMK <--
 )
 
 private object UniFileAsStringSerializer : KSerializer<UniFile?> {
